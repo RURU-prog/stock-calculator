@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票均價倒推系統</title>
+    <title>股票均價倒推系統 - 自動存檔版</title>
     <style>
         body { font-family: "PingFang TC", sans-serif; background-color: #f8f9fa; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -12,15 +12,16 @@
         td { padding: 10px; border-bottom: 1px solid #eee; }
         input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         .res-cell { font-weight: bold; color: #d93025; text-align: center; background: #fffcfc; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
         .btn-add { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-add:hover { background: #1557b0; }
+        .btn-clear { background: #dadce0; color: #3c4043; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
         .total-box { margin-top: 20px; padding: 15px; background: #e8f0fe; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>股票均價倒推系統</h2>
+    <h2>股票均價倒推系統 (自動存檔)</h2>
     <table id="stockTable">
         <thead>
             <tr>
@@ -32,23 +33,49 @@
             </tr>
         </thead>
         <tbody id="stockBody">
-            <tr>
-                <td><input type="text" placeholder="例：台積電"></td>
-                <td><input type="number" class="shares" oninput="calcRow(this)"></td>
-                <td><input type="number" class="profit" oninput="calcRow(this)"></td>
-                <td><input type="number" class="price" step="0.01" oninput="calcRow(this)"></td>
-                <td class="res-cell">--</td>
-            </tr>
-        </tbody>
+            </tbody>
     </table>
-    <button class="btn-add" onclick="addRow()">+ 新增下一筆</button>
+    <div class="btn-group">
+        <button class="btn-add" onclick="addRow()">+ 新增下一筆</button>
+        <button class="btn-clear" onclick="clearData()">清空所有資料</button>
+    </div>
     <div class="total-box">整體總損益：<span id="totalProfit">0</span> 元</div>
 </div>
 
 <script>
-    // 核心計算函數
-    function calcRow(input) {
+    // 初始化：載入舊資料或建立空行
+    window.onload = function() {
+        const savedData = JSON.parse(localStorage.getItem('stockData'));
+        if (savedData && savedData.length > 0) {
+            savedData.forEach(data => addRow(data));
+        } else {
+            addRow();
+        }
+        updateTotal();
+    };
+
+    function addRow(data = {name:'', shares:'', profit:'', price:''}) {
+        const tbody = document.getElementById('stockBody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="name" value="${data.name}" oninput="saveAndCalc(this)"></td>
+            <td><input type="number" class="shares" value="${data.shares}" oninput="saveAndCalc(this)"></td>
+            <td><input type="number" class="profit" value="${data.profit}" oninput="saveAndCalc(this)"></td>
+            <td><input type="number" class="price" step="0.01" value="${data.price}" oninput="saveAndCalc(this)"></td>
+            <td class="res-cell">--</td>
+        `;
+        tbody.appendChild(tr);
+        if(data.shares) calcRow(tr); // 如果有舊資料則立即計算
+    }
+
+    function saveAndCalc(input) {
         const row = input.closest('tr');
+        calcRow(row);
+        updateTotal();
+        saveAllData(); // 每次輸入都自動儲存
+    }
+
+    function calcRow(row) {
         const n = parseFloat(row.querySelector('.shares').value);
         const p = parseFloat(row.querySelector('.profit').value);
         const m = parseFloat(row.querySelector('.price').value);
@@ -60,24 +87,19 @@
         } else {
             resCell.innerText = "--";
         }
-        updateTotal();
     }
 
-    // 新增列函數 (確保這段有被貼入)
-    function addRow() {
-        const tbody = document.getElementById('stockBody');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text"></td>
-            <td><input type="number" class="shares" oninput="calcRow(this)"></td>
-            <td><input type="number" class="profit" oninput="calcRow(this)"></td>
-            <td><input type="number" class="price" step="0.01" oninput="calcRow(this)"></td>
-            <td class="res-cell">--</td>
-        `;
-        tbody.appendChild(tr);
+    function saveAllData() {
+        const rows = document.querySelectorAll('#stockBody tr');
+        const dataToSave = Array.from(rows).map(row => ({
+            name: row.querySelector('.name').value,
+            shares: row.querySelector('.shares').value,
+            profit: row.querySelector('.profit').value,
+            price: row.querySelector('.price').value
+        }));
+        localStorage.setItem('stockData', JSON.stringify(dataToSave));
     }
 
-    // 總計更新
     function updateTotal() {
         let total = 0;
         document.querySelectorAll('.profit').forEach(i => {
@@ -86,6 +108,13 @@
         const el = document.getElementById('totalProfit');
         el.innerText = total.toLocaleString();
         el.style.color = total >= 0 ? "#188038" : "#d93025";
+    }
+
+    function clearData() {
+        if(confirm("確定要清空並刪除所有存檔嗎？")) {
+            localStorage.removeItem('stockData');
+            location.reload();
+        }
     }
 </script>
 
