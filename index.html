@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票均價倒推系統</title>
+    <style>
+        body { font-family: "PingFang TC", sans-serif; background-color: #f8f9fa; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .res-cell { font-weight: bold; color: #d93025; text-align: center; background: #fffcfc; }
+        .btn-add { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-add:hover { background: #1557b0; }
+        .total-box { margin-top: 20px; padding: 15px; background: #e8f0fe; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>股票均價倒推系統</h2>
+    <table id="stockTable">
+        <thead>
+            <tr>
+                <th>名稱</th>
+                <th>股數</th>
+                <th>總損益</th>
+                <th>目前現價</th>
+                <th>買入均價</th>
+            </tr>
+        </thead>
+        <tbody id="stockBody">
+            <tr>
+                <td><input type="text" placeholder="例：台積電"></td>
+                <td><input type="number" class="shares" oninput="calcRow(this)"></td>
+                <td><input type="number" class="profit" oninput="calcRow(this)"></td>
+                <td><input type="number" class="price" step="0.01" oninput="calcRow(this)"></td>
+                <td class="res-cell">--</td>
+            </tr>
+        </tbody>
+    </table>
+    <button class="btn-add" onclick="addRow()">+ 新增下一筆</button>
+    <div class="total-box">整體總損益：<span id="totalProfit">0</span> 元</div>
+</div>
+
+<script>
+    // 核心計算函數
+    function calcRow(input) {
+        const row = input.closest('tr');
+        const n = parseFloat(row.querySelector('.shares').value);
+        const p = parseFloat(row.querySelector('.profit').value);
+        const m = parseFloat(row.querySelector('.price').value);
+        const resCell = row.querySelector('.res-cell');
+
+        if (n && !isNaN(p) && m) {
+            const avg = ((n * m) - p) / n;
+            resCell.innerText = avg.toFixed(2);
+        } else {
+            resCell.innerText = "--";
+        }
+        updateTotal();
+    }
+
+    // 新增列函數 (確保這段有被貼入)
+    function addRow() {
+        const tbody = document.getElementById('stockBody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text"></td>
+            <td><input type="number" class="shares" oninput="calcRow(this)"></td>
+            <td><input type="number" class="profit" oninput="calcRow(this)"></td>
+            <td><input type="number" class="price" step="0.01" oninput="calcRow(this)"></td>
+            <td class="res-cell">--</td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    // 總計更新
+    function updateTotal() {
+        let total = 0;
+        document.querySelectorAll('.profit').forEach(i => {
+            if(!isNaN(parseFloat(i.value))) total += parseFloat(i.value);
+        });
+        const el = document.getElementById('totalProfit');
+        el.innerText = total.toLocaleString();
+        el.style.color = total >= 0 ? "#188038" : "#d93025";
+    }
+</script>
+
+</body>
+</html>
