@@ -32,8 +32,7 @@
                 <th>買入均價</th>
             </tr>
         </thead>
-        <tbody id="stockBody">
-            </tbody>
+        <tbody id="stockBody"></tbody>
     </table>
     <div class="btn-group">
         <button class="btn-add" onclick="addRow()">+ 新增下一筆</button>
@@ -43,7 +42,6 @@
 </div>
 
 <script>
-    // 初始化：載入舊資料或建立空行
     window.onload = function() {
         const savedData = JSON.parse(localStorage.getItem('stockData'));
         if (savedData && savedData.length > 0) {
@@ -65,14 +63,14 @@
             <td class="res-cell">--</td>
         `;
         tbody.appendChild(tr);
-        if(data.shares) calcRow(tr); // 如果有舊資料則立即計算
+        if(data.shares) calcRow(tr);
     }
 
     function saveAndCalc(input) {
         const row = input.closest('tr');
         calcRow(row);
         updateTotal();
-        saveAllData(); // 每次輸入都自動儲存
+        saveAllData();
     }
 
     function calcRow(row) {
@@ -80,10 +78,8 @@
         const p = parseFloat(row.querySelector('.profit').value);
         const m = parseFloat(row.querySelector('.price').value);
         const resCell = row.querySelector('.res-cell');
-
         if (n && !isNaN(p) && m) {
-            const avg = ((n * m) - p) / n;
-            resCell.innerText = avg.toFixed(2);
+            resCell.innerText = (((n * m) - p) / n).toFixed(2);
         } else {
             resCell.innerText = "--";
         }
@@ -91,13 +87,13 @@
 
     function saveAllData() {
         const rows = document.querySelectorAll('#stockBody tr');
-        const dataToSave = Array.from(rows).map(row => ({
-            name: row.querySelector('.name').value,
-            shares: row.querySelector('.shares').value,
-            profit: row.querySelector('.profit').value,
-            price: row.querySelector('.price').value
+        const data = Array.from(rows).map(r => ({
+            name: r.querySelector('.name').value,
+            shares: r.querySelector('.shares').value,
+            profit: r.querySelector('.profit').value,
+            price: r.querySelector('.price').value
         }));
-        localStorage.setItem('stockData', JSON.stringify(dataToSave));
+        localStorage.setItem('stockData', JSON.stringify(data));
     }
 
     function updateTotal() {
